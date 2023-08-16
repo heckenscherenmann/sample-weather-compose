@@ -15,13 +15,17 @@ jobs:
   build:
     runs-on: macos-latest
 
+    env:
+        api-level: 30
+        java-version: 11
+
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK 11
+      - name: Set up JDK ${{ env.java-version }}
         uses: actions/setup-java@v3
         with:
-          java-version: 11
+          java-version: ${{ env.java-version }}
           distribution: 'adopt'
           cache: 'gradle'
 
@@ -35,21 +39,22 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+          key: ${{ runner.os }}-${{ env.api-level }}-${{ env.java-version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29 
+          api-level: ${{ env.api-level }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
 
       - name: Run Android tests
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: ${{ env.api-level }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           target: google_apis
