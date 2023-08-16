@@ -10,22 +10,25 @@ jobs:
   build:
     runs-on: macos-latest
 
-    env:
-        api-level: 33
-        java-version: 11
+    strategy:
+        matrix:
+          api-level: [30, 33]
+          target: [google_apis]
+          java-version: [11]
+          architecture: [x86_64]
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK ${{ env.java-version }}
+      - name: Set up JDK ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ env.java-version }}
+          java-version: ${{ matrix.java-version }}
           distribution: 'adopt'
           cache: 'gradle'
 
       - name: Run unit tests
-        run: ./gradlew build --dry-run
+        run: ./gradlew build
 
       - name: AVD cache
         uses: actions/cache@v3
@@ -34,26 +37,27 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: ${{ runner.os }}-${{ env.api-level }}-${{ env.java-version }}
+          key: ${{ runner.os }}-${{ matrix.api-level }}-${{ matrix.target}}-${{ matrix.java-version }}-${{ matrix.architecture }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ env.api-level }}
+          api-level: ${{ matrix.api-level }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          target: google_apis
-          arch: x86_64
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.architecture }}
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run Android tests
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
-          api-level: ${{ env.api-level }}
+          api-level: ${{ matrix.api-level }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          target: google_apis
-          arch: x86_64
-          script: ./gradlew connectedAndroidTest --dry-run
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.architecture }}
+          script: ./gradlew connectedAndroidTest
+
