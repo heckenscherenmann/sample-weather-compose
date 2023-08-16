@@ -25,13 +25,34 @@ jobs:
           distribution: 'adopt'
           cache: 'gradle'
 
-      - name: Assemble and test project
+      - name: Run unit tests
         run: ./gradlew build --dry-run
 
-      - name: Run connected tests
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-30
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Run Android tests
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 30
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           target: google_apis
           arch: x86_64
           script: ./gradlew connectedAndroidTest --dry-run
