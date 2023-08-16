@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-latest
 
     env:
-        api-level: 29
+        api-level: 33
         java-version: 11
 
     steps:
@@ -48,7 +48,7 @@ jobs:
           api-level: ${{ env.api-level }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
+          disable-animations: true
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run Android tests
